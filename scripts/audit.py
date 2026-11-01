@@ -1,8 +1,8 @@
-"""Fail closed on typical secrets/private paths; report locations, never values."""
+﻿"""Fail closed on typical secrets/private paths; report locations, never values."""
 import argparse, pathlib, re, subprocess, sys, json
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 RULES={
- 'OpenAI credential':re.compile(r'\bsk-(?:proj-|svcacct-)?[A-Za-z0-9_-]{24,}'),
+ 'credential prefix':re.compile(r'\bsk-(?:proj-|svcacct-)?[A-Za-z0-9_-]{24,}'),
  'GitHub credential':re.compile(r'\b(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,})'),
  'AWS access key':re.compile(r'\b(?:AKIA|ASIA)[A-Z0-9]{16}\b'),
  'private key':re.compile(r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----'),
