@@ -1,0 +1,33 @@
+PASS URL and trim time validation
+PASS WPF downloader render
+PASS media import and audio detection
+PASS trim + two-clip concat + 9:16 + Cyrillic title + audio + export progress
+PASS exported dimensions, duration, audio
+PASS project serialization
+PASS square/landscape, fit/crop, all text styles and SRT subtitles
+PASS camera-top layout + 2 clips + looping music + fades + both audio tones decoded
+PASS camera-bottom exact preview filter
+PASS queue reorder and UI trim-update action
+PASS V1 settings compatibility and V2 camera/music persistence
+PASS real 0.5x/2x two-clip exports, 60fps, color/mirror filters and preserved 440Hz audio pitch
+PASS silent media + preview proxy encode
+PASS camera layout and added music on source with no audio
+PASS camera source selection view and composite preview
+PASS export-options dialog and cancel
+PASS full-project undo/redo, new edit branching and invalid-input recovery
+PASS timeline selection, edge trim, clamped range move and gesture undo
+PASS timeline zoom, time mapping, navigation and 10 extracted video thumbnails
+PASS atomic autosave, last-valid-state fallback and real recovery project loading
+PASS recovery discovery without accessing or overwriting real user recovery files
+PASS video/audio/image import, independent timing, layer order and circle alpha pixels
+PASS all mask shapes, rotation, opacity, fades, color filter and six text styles in real FFmpeg frames
+PASS full MP4 composition, four-second timeline, output geometry, progress and decoded 440/880Hz audio mix
+PASS mask preserves the existing alpha channel of transparent PNG layers
+PASS audio mute verified in decoded PCM, image layer at 2x and reversible audio detachment
+PASS actual timeline drag, undo/redo, split, duplicate, delete and track lock
+PASS source-aware edge trimming and extending generated text without a negative source offset
+PASS V4 project save/load and invalid transform validation
+
+
+PASS isolated Setup install, installed multitrack tests, project association, uninstall and user-project preservation.
+Live Twitch download was not exercised in this editor test run.
