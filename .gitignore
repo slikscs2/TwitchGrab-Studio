@@ -1,0 +1,47 @@
+# Private data and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+*.jks
+*credentials*
+*secrets*
+*.token
+*.cookie*
+# Local media and editing projects
+*.tgstudio
+*.mp4
+*.mkv
+*.mov
+*.ts
+*.webm
+*.avi
+*.wav
+*.mp3
+*.flac
+*.srt
+*.ass
+# Generated output, dependencies and test data
+engine/
+dist/
+bin/
+obj/
+.vs/
+.vscode/
+work/
+outputs/
+test-*
+studio-test.txt
+studio-*.png
+*.exe
+*.dll
+*.zip
+*.log
+*.pdb
+__pycache__/
+*.pyc
+# Local agent state
+.codex/
