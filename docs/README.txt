@@ -12,7 +12,7 @@
 Поддерживается и запуск из полностью распакованной папки: TwitchGrab-Studio.exe.
 Рядом должны оставаться Studio.xaml, progress_bridge.py, assets и engine.
 Windows 10/11 x64, системный .NET Framework 4.8 / WPF.
-Python, Streamlink и FFmpeg включены. API-ключи и отдельный аккаунт не нужны.
+Python, Streamlink и FFmpeg включены.
 
 НОВОЕ В ВЕРСИИ 7 • МНОГОДОРОЖЕЧНЫЙ МОНТАЖ
 Откройте вкладку «Дорожки» вверху окна. Прежний редактор и загрузчик сохранены.
