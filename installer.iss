@@ -1,7 +1,7 @@
 ﻿#ifdef Validation
   #define StudioId "{{946DF611-BF0E-45FC-9C90-E832E151DCB4}"
-  #define StudioName "TwitchGrab Studio (validation 7.0)"
-  #define ProjectProgId "TwitchGrabStudio.Validation70"
+  #define StudioName "TwitchGrab Studio (validation 7.1)"
+  #define ProjectProgId "TwitchGrabStudio.Validation71"
 #else
   #define StudioId "{{D53B79B1-6254-4C46-93CD-7D52B8FA3795}"
   #define StudioName "TwitchGrab Studio"
@@ -10,8 +10,8 @@
 [Setup]
 AppId={#StudioId}
 AppName={#StudioName}
-AppVersion=7.0.0
-AppVerName=TwitchGrab Studio 7.0
+AppVersion=7.1.0
+AppVerName=TwitchGrab Studio 7.1
 AppPublisher=sliks37
 AppPublisherURL=https://github.com/slikscs2
 AppSupportURL=https://t.me/sliksy37
@@ -22,7 +22,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 #ifdef Validation
-AppMutex=TwitchGrabStudioValidation70
+AppMutex=TwitchGrabStudioValidation71
 #else
 AppMutex=TwitchGrabStudio
 #endif
@@ -34,10 +34,10 @@ DisableProgramGroupPage=yes
 SetupIconFile=assets\app.ico
 UninstallDisplayIcon={app}\TwitchGrab-Studio.exe
 OutputDir=dist
-OutputBaseFilename=TwitchGrab-Studio-Setup-v7.0
+OutputBaseFilename=TwitchGrab-Studio-Setup-v7.1
 Compression=lzma2/fast
 SolidCompression=yes
-VersionInfoVersion=7.0.0.0
+VersionInfoVersion=7.1.0.0
 VersionInfoCompany=sliks37
 VersionInfoProductName=TwitchGrab Studio
 SetupLogging=yes

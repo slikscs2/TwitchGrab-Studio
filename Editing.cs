@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -31,7 +31,7 @@ public partial class Studio
   timeline.ViewChanged+=delegate{thumbnailVersion++;Kill(thumbnailProcess.Current);thumbnailDelay.Stop();thumbnailDelay.Start();};
   Btn("TimelineFull").Click+=delegate{timeline.ResetView();};
   Btn("TimelineIn").Click+=delegate{timeline.Zoom(2,Slide("Seek").Value);};Btn("TimelineOut").Click+=delegate{timeline.Zoom(.5,Slide("Seek").Value);};
-  Btn("Undo").Click+=delegate{HistoryStep(-1);};Btn("Redo").Click+=delegate{HistoryStep(1);};
+  Btn("Undo").Click+=delegate{if(montageMode)MontageUndo(-1);else HistoryStep(-1);};Btn("Redo").Click+=delegate{if(montageMode)MontageUndo(1);else HistoryStep(1);};
   Btn("StepBack").Click+=delegate{StepFrame(-1);};Btn("StepForward").Click+=delegate{StepFrame(1);};
   Btn("RecoverSession").Click+=async delegate{if(availableRecovery!=null){await LoadProjectFile(availableRecovery);Btn("RecoverSession").Visibility=Visibility.Collapsed;Status("Автокопия восстановлена. Сохраните проект под нужным именем.");}};
   journalDelay.Interval=TimeSpan.FromMilliseconds(500);journalDelay.Tick+=delegate{journalDelay.Stop();FlushJournal();};
@@ -50,7 +50,7 @@ public partial class Studio
   if(journalIndex+1<journal.Count)journal.RemoveRange(journalIndex+1,journal.Count-journalIndex-1);
   journal.Add(state);if(journal.Count>60)journal.RemoveAt(0);journalIndex=journal.Count-1;UpdateHistoryButtons();
  }
- void UpdateHistoryButtons(){if(Btn("Undo")!=null)Btn("Undo").IsEnabled=journalIndex>0;if(Btn("Redo")!=null)Btn("Redo").IsEnabled=journalIndex>=0&&journalIndex<journal.Count-1;}
+ void UpdateHistoryButtons(){if(montageMode){UpdateMontageHistoryButtons();return;}if(Btn("Undo")!=null)Btn("Undo").IsEnabled=journalIndex>0;if(Btn("Redo")!=null)Btn("Redo").IsEnabled=journalIndex>=0&&journalIndex<journal.Count-1;}
  void HistoryStep(int direction){if(source==null||loading||exporting||previewBuilding||timeline.InRangeGesture)return;journalDelay.Stop();
   if(direction<0){try{Snapshot();}catch{if(journalIndex>=0)RestoreSnapshot(journal[journalIndex]);return;}}
   FlushJournal();int target=journalIndex+direction;if(target<0||target>=journal.Count)return;journalIndex=target;RestoreSnapshot(journal[journalIndex]);UpdateHistoryButtons();

@@ -16,8 +16,8 @@ using System.Windows.Threading;
 using System.Web.Script.Serialization;
 using Microsoft.Win32;
 
-[assembly:System.Reflection.AssemblyVersion("7.0.0.0")]
-[assembly:System.Reflection.AssemblyFileVersion("7.0.0.0")]
+[assembly:System.Reflection.AssemblyVersion("7.1.0.0")]
+[assembly:System.Reflection.AssemblyFileVersion("7.1.0.0")]
 [assembly:System.Reflection.AssemblyProduct("TwitchGrab Studio")]
 [assembly:System.Reflection.AssemblyCompany("sliks37")]
 
@@ -77,14 +77,14 @@ public partial class Studio
   try {
    var app=new Application(); app.ShutdownMode=ShutdownMode.OnMainWindowClose;
    var studio=new Studio();
-   if(args.Contains("--self-test")||args.Contains("--montage-test")) {
-    studio.selfTesting=true;
-    studio.window.Loaded+=async delegate { try { if(args.Contains("--montage-test")){var report=new List<string>();await studio.TestMontage(report);File.WriteAllLines(Path.Combine(studio.root,"studio-test.txt"),report);}else await studio.SelfTest(); } catch(Exception ex) { File.WriteAllText(Path.Combine(studio.root,"studio-test.txt"),"FAIL\r\n"+ex); Environment.ExitCode=1; } finally { studio.window.Close(); } };
+   if(args.Contains("--self-test")||args.Contains("--montage-test")||args.Contains("--unified-test")) {
+    studio.selfTesting=true;File.WriteAllText(Path.Combine(studio.root,"studio-test.txt"),"RUNNING");
+    studio.window.Loaded+=async delegate { try { if(args.Contains("--montage-test")||args.Contains("--unified-test")){var report=new List<string>();await studio.TestMontage(report);if(args.Contains("--unified-test"))await studio.TestUnifiedEditor(report);File.WriteAllLines(Path.Combine(studio.root,"studio-test.txt"),report);}else await studio.SelfTest(); } catch(Exception ex) { File.WriteAllText(Path.Combine(studio.root,"studio-test.txt"),"FAIL\r\n"+ex); Environment.ExitCode=1; } finally { studio.window.Close(); } };
    }
    else if(args.Length>0&&File.Exists(args[0])){studio.startupRequested=true;studio.window.Loaded+=async delegate {if(String.Equals(Path.GetExtension(args[0]),".tgstudio",StringComparison.OrdinalIgnoreCase))await studio.LoadProjectFile(args[0]);else await studio.OpenMedia(args[0]);};}
    app.DispatcherUnhandledException+=delegate(object sender,DispatcherUnhandledExceptionEventArgs e) { studio.Status("Ошибка: "+e.Exception.Message); e.Handled=true; };
    app.Run(studio.window);
-  } catch(Exception ex) { MessageBox.Show("TwitchGrab Studio: "+ex.Message,"Не удалось запустить приложение"); Environment.ExitCode=1; }
+  } catch(Exception ex) { File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"studio-test.txt"),"FAIL STARTUP\r\n"+ex);if(!args.Any(a=>a.EndsWith("-test")))MessageBox.Show("TwitchGrab Studio: "+ex.Message,"Не удалось запустить приложение"); Environment.ExitCode=1; }
  }
 
  public Studio() {
@@ -133,7 +133,7 @@ public partial class Studio
   UI<CheckBox>("MusicFade").Checked+=delegate {Changed();}; UI<CheckBox>("MusicFade").Unchecked+=delegate {Changed();};
   Btn("Export").Click+=async delegate { await Export(); };
   Btn("CancelExport").Click+=delegate { if(exporting) { exportCancelRequested=true; Status("Отмена экспорта…"); Kill(exportProcess); } };
-  Btn("PlayPreview").Click+=async delegate { await PlayPreview(); };
+  Btn("PlayPreview").Click+=async delegate { if(montageMode)await PlayMontage();else await PlayPreview(); };
   UI<MediaElement>("Player").MediaEnded+=delegate { StopPlayer(); };
   UI<MediaElement>("Player").MediaFailed+=delegate { StopPlayer(); Status("Не удалось воспроизвести предпросмотр средствами Windows. Кадры и экспорт работают через FFmpeg."); };
   foreach(string n in new[]{"Aspect","FitMode","TextStyle","Resolution","Layout","FrameRate"}) Combo(n).SelectionChanged+=delegate { Changed(); };
@@ -162,6 +162,7 @@ public partial class Studio
   Page(false);
   InitEditing();
   InitMontage();
+  InstallStudioDesign();
  }
  Point ImagePoint(Point point){var image=UI<Image>("PreviewFrame");double k=Math.Min(image.ActualWidth/sourceWidth,image.ActualHeight/sourceHeight),w=sourceWidth*k,h=sourceHeight*k;return new Point(Math.Max(0,Math.Min(1,(point.X-(image.ActualWidth-w)/2)/w)),Math.Max(0,Math.Min(1,(point.Y-(image.ActualHeight-h)/2)/h)));}
  void DrawCameraDrag(Point end){var image=UI<Image>("PreviewFrame");double k=Math.Min(image.ActualWidth/sourceWidth,image.ActualHeight/sourceHeight),w=sourceWidth*k,h=sourceHeight*k;var box=UI<System.Windows.Shapes.Rectangle>("CameraDrag");Canvas.SetLeft(box,(image.ActualWidth-w)/2+Math.Min(cameraStart.X,end.X)*w);Canvas.SetTop(box,(image.ActualHeight-h)/2+Math.Min(cameraStart.Y,end.Y)*h);box.Width=Math.Abs(end.X-cameraStart.X)*w;box.Height=Math.Abs(end.Y-cameraStart.Y)*h;box.Visibility=Visibility.Visible;}
@@ -171,11 +172,12 @@ public partial class Studio
 
  void Link(string url) { try {Process.Start(new ProcessStartInfo(url){UseShellExecute=true});} catch(Exception e){Status(e.Message);} }
  void Page(bool editor) {
-  if(montagePlaying)StopMontagePlayer();montageMode=false;if(montageNav!=null){montageNav.Background=MC("#191a1f");montageNav.Foreground=MC("#a0a0af");}if(montagePage!=null)montagePage.Visibility=Visibility.Collapsed;
+  if(editor&&montagePage!=null&&(!selfTesting||unifiedTest)){ShowMontage();return;}
+  if(montagePlaying)StopMontagePlayer();montageMode=false;if(montagePage!=null)montagePage.Visibility=Visibility.Collapsed;
   UI<Grid>("EditorPage").Visibility=editor?Visibility.Visible:Visibility.Collapsed;
   UI<Grid>("DownloadPage").Visibility=editor?Visibility.Collapsed:Visibility.Visible;
-  window.Title="TwitchGrab Studio 7.0 — sliks37";
-  foreach(string name in new[]{"NavEditor","NavDownload"}){bool active=name==(editor?"NavEditor":"NavDownload");Btn(name).Background=new SolidColorBrush((Color)ColorConverter.ConvertFromString(active?"#302742":"#191a1f"));Btn(name).Foreground=new SolidColorBrush((Color)ColorConverter.ConvertFromString(active?"#b59aff":"#a0a0af"));Btn(name).BorderThickness=new Thickness(0);}
+  window.Title="TwitchGrab Studio 7.1 — sliks37";
+  foreach(string name in new[]{"NavEditor","NavDownload"}){bool active=name==(editor?"NavEditor":"NavDownload");Btn(name).Background=new SolidColorBrush((Color)ColorConverter.ConvertFromString(active?"#51236b":"#11101b"));Btn(name).Foreground=new SolidColorBrush((Color)ColorConverter.ConvertFromString(active?"#b59aff":"#aaa0be"));Btn(name).BorderThickness=new Thickness(0);}
  }
 
  static Task<RunResult> Run(string exe,string args,string dir,Action<Process> started,Action<string> line) {
@@ -203,7 +205,7 @@ public partial class Studio
   var box=TB("DownloadLog"); if(box.Text.Length>30000)box.Text=box.Text.Substring(box.Text.Length-15000);box.AppendText(s+Environment.NewLine);box.ScrollToEnd();
  }
  string activeDownload;
- void UpdateDownload() {
+ void UpdateDownload() {UpdateHomeProgress();
   long bytes=0;try{if(File.Exists(activeDownload)) bytes=new FileInfo(activeDownload).Length;}catch{}
   double elapsed=Math.Max(1,(DateTime.Now-downloadBegan).TotalSeconds),speed=bytes/1048576.0/elapsed;
   Label("DownloadSize").Text=Size(bytes);Label("DownloadSpeed").Text=speed.ToString("0.00")+" МБ/с";
@@ -250,8 +252,9 @@ public partial class Studio
   finally {downloading=false;muxing=false;downloadProcess=null;Bar("DownloadProgress").IsIndeterminate=false;Btn("DownloadStart").IsEnabled=true;Btn("DownloadStop").IsEnabled=false;Btn("BrowseFolder").IsEnabled=true;TB("DownloadUrl").IsEnabled=true;TB("DownloadFolder").IsEnabled=true;}
  }
 
- async Task Import() {var d=new OpenFileDialog{Filter="Видеофайлы|*.mp4;*.mkv;*.mov;*.ts;*.webm;*.avi;*.m4v|Все файлы|*.*",CheckFileExists=true};if(d.ShowDialog(window)==true)await OpenMedia(d.FileName);}
+ async Task Import() {if((!selfTesting||unifiedTest)&&montagePage!=null){await ImportMontage(null);return;}var d=new OpenFileDialog{Filter="Видеофайлы|*.mp4;*.mkv;*.mov;*.ts;*.webm;*.avi;*.m4v|Все файлы|*.*",CheckFileExists=true};if(d.ShowDialog(window)==true)await OpenMedia(d.FileName);}
  async Task OpenMedia(string path) {
+  if((!selfTesting||unifiedTest)&&montagePage!=null){if(montageBusy()){Status("Дождитесь окончания операции.");return;}await ProbeMontageAsset(path);ShowMontage();return;}
   if(exporting||loading||previewBuilding){Status("Дождитесь окончания текущей операции.");return;}
   if(!File.Exists(path)){Status("Видеофайл не найден: "+path);return;}
   bool opened=false;if(!selfTesting)PersistRecovery();
@@ -427,7 +430,7 @@ public partial class Studio
  }
 
  void SaveProject() {
-  if(montageMode){SaveMontage();return;}
+  if(montageMode||(!selfTesting&&montagePage!=null)){SaveMontage();return;}
   try {if(source==null)throw new Exception("Сначала откройте видео.");var c=Range();var d=new SaveFileDialog{Filter="Проект TwitchGrab|*.tgstudio",DefaultExt=".tgstudio",FileName=Path.GetFileNameWithoutExtension(source)+".tgstudio"};if(d.ShowDialog(window)!=true)return;
    if(!String.Equals(Path.GetExtension(d.FileName),".tgstudio",StringComparison.OrdinalIgnoreCase))throw new Exception("Проект нужно сохранить с расширением .tgstudio.");
    var p=new Project{Version=3,Source=source,In=c.Start,Out=c.End,Clips=new List<Clip>(clips),Settings=Settings()};AtomicProjectWrite(d.FileName,new JavaScriptSerializer().Serialize(p));Label("ProjectState").Text="Проект сохранён";Status("Проект сохранён. Видео, музыка и субтитры остаются отдельными файлами.");
@@ -438,7 +441,8 @@ public partial class Studio
  }
  async Task LoadProjectFile(string path){
   try {if(exporting||loading||previewBuilding)throw new Exception("Дождитесь окончания текущей операции.");
-   var p=new JavaScriptSerializer().Deserialize<Project>(File.ReadAllText(path));if(p!=null&&p.Version==4&&p.Montage!=null){await LoadMontage(p.Montage);return;}if(p==null||p.Version<1||p.Version>3||p.Settings==null||p.Clips==null||p.Clips.Count>20)throw new Exception("Неподдерживаемый или повреждённый проект.");
+   var p=new JavaScriptSerializer().Deserialize<Project>(File.ReadAllText(path));if(p!=null&&(p.Version==4||p.Version==5)&&p.Montage!=null){await LoadMontage(p.Montage);return;}if(p==null||p.Version<1||p.Version>3||p.Settings==null||p.Clips==null||p.Clips.Count>20)throw new Exception("Неподдерживаемый или повреждённый проект.");
+   if(!selfTesting||unifiedTest){await ImportLegacyProject(p);return;}
    if(!File.Exists(p.Source)){var sourceDialog=new OpenFileDialog{Title="Найдите исходное видео для проекта",CheckFileExists=true};if(sourceDialog.ShowDialog(window)!=true)return;p.Source=sourceDialog.FileName;}
    await OpenMedia(p.Source);if(source!=Path.GetFullPath(p.Source))return;
    p.Settings.Music=Relink(p.Settings.Music,"Найдите музыку для проекта","Звуковые файлы|*.mp3;*.wav;*.flac;*.ogg;*.m4a;*.aac;*.mp4|Все файлы|*.*");
@@ -496,6 +500,7 @@ public partial class Studio
   var dialogTimer=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(300)};dialogTimer.Tick+=delegate{var dialog=Application.Current.Windows.Cast<Window>().FirstOrDefault(w=>w.Title=="Экспорт ролика");if(dialog!=null){dialogTimer.Stop();Screenshot("studio-export.png",dialog);dialog.DialogResult=false;}};dialogTimer.Start();if(ConfigureExport(ranges))throw new Exception("Export-options cancel failed");dialogTimer.Stop();report.Add("PASS export-options dialog and cancel");
   await TestEditing(report);
   await TestMontage(report);
+  await TestUnifiedEditor(report);
   File.WriteAllLines(Path.Combine(root,"studio-test.txt"),report);Status("Self-test passed");
  }
 }

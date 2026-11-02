@@ -49,7 +49,7 @@ public partial class Studio {
 
   string project=Path.Combine(root,"test-montage.tgstudio");AtomicProjectWrite(project,new JavaScriptSerializer().Serialize(MontageProject()));string snapshot=MontageSnapshot();await LoadProjectFile(project);if(MontageSnapshot()!=snapshot||!montageMode)throw new Exception("Multitrack project did not restore");
   var invalid=new JavaScriptSerializer().Deserialize<MontageDocument>(snapshot);invalid.Items[0].Scale=double.NaN;bool rejected=false;try{ValidateMontage(invalid,true);}catch{rejected=true;}if(!rejected)throw new Exception("Non-finite project transform accepted");
-  report.Add("PASS V4 project save/load and invalid transform validation");
+  report.Add("PASS V4/V5 project save/load and invalid transform validation");
   montageSeek.Value=1.5;var final=await RenderMontage(montage,frame,true,true,1.5,.1,null,null);if(final.Code!=0)throw new Exception(final.Error);montageImage.Source=ReadBitmap(frame);SelectMontage(montage.Items.First(c=>TrackOf(c).Kind=="video"&&c.Asset==overAsset.Id));multiTimeline.Fit();window.UpdateLayout();Screenshot("studio-tracks.png");
  }
 }
